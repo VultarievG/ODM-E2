@@ -1,0 +1,573 @@
+@name Vul's ODM
+@inputs 
+@outputs 
+@persist Freq I
+@persist Wep:string
+@trigger 
+
+@persist LaunchSpeed Height HookGravity CableStiffness CableDampening Delay Reel
+@persist RetractMaxSpeed RetractStartSpeed RetractAccel [RangerFlags SteamSound HitSound ReleaseSound]:string Trail Sound
+
+@persist [SmokeKey SmokeNext SmokePrev SmokeColor]:string [SmokeVel SmokeDir]:vector SmokeSpeed SmokeAlive SmokeTime SmokeLaunch
+
+@persist [LeftState LeftKey]:string LeftRetract LeftLength LeftModeChange LeftSpeed LeftDirection:vector LeftTimer LeftTime LeftParent:entity
+
+@persist [RightState RightKey]:string RightRetract RightLength RightModeChange RightSpeed RightDirection:vector RightTimer RightTime RightParent:entity
+
+if(first() == 1)
+{
+    #include "include/libltrails"
+    function number vector:mag()
+    {
+        O = vec():distance(This)
+        if(O == 0)
+        {
+            O = 1
+        }
+        return O
+    }
+    
+    function spawnTrail()
+    {
+        owner():ltCreate(10, owner():pos(), 20, 150, 2, "trails/smoke", vec(1,1,1)*200, 70)
+    }
+    
+    function playS()
+    {
+        owner():soundPlay(1, 0, SteamSound)
+        soundPitch(1, 70)
+        soundVolume(1, 0.25)
+    }
+    
+    function playHit()
+    {
+        owner():soundPlay("hit", 1, HitSound)
+        soundPitch("hit", 255)
+    }
+    
+    function playRe()
+    {
+        owner():soundPlay("re", 1, ReleaseSound)
+        soundPitch("re", 255)
+    }
+    
+    function nextSmoke()
+    {
+        if(SmokeColor == "Green")
+        {
+            SmokeColor = "Red"
+        }
+        elseif(SmokeColor == "Yellow")
+        {
+            SmokeColor = "Green"
+        }
+        elseif(SmokeColor == "Red")
+        {
+            SmokeColor = "Yellow"
+        }
+        print("Flare is now "+SmokeColor)
+    }
+    function prevSmoke()
+    {
+        if(SmokeColor == "Green")
+        {
+            SmokeColor = "Yellow"
+        }
+        elseif(SmokeColor == "Yellow")
+        {
+            SmokeColor = "Red"
+        }
+        elseif(SmokeColor == "Red")
+        {
+            SmokeColor = "Green"
+        }
+        print("Flare is now "+SmokeColor)
+    }
+    
+    function shootSmoke()
+    {
+        print("bang")
+        stoptimer("smoke")
+        timer("smoke", SmokeTime*1000)
+        if(SmokeColor == "Green")
+        {
+            owner():ltCreate(11, owner():pos(), 150, 150, 5, "trails/smoke", vec(0,1,0)*255, 255)
+        }
+        if(SmokeColor == "Yellow")
+        {
+            owner():ltCreate(11, owner():pos(), 150, 150, 5, "trails/smoke", vec(1,1,0)*255, 255)
+        }
+        if(SmokeColor == "Red")
+        {
+            owner():ltCreate(11, owner():pos(), 150, 150, 5, "trails/smoke", vec(1,0,0)*255, 255)
+        }
+        holoUnparent(11)
+        holoPos(11, owner():pos()+vec(0,0,owner():height()+10))
+        SmokeVel = owner():vel()+SmokeLaunch*owner():eye()
+        SmokeAlive = 1
+    }
+    
+    function smokeTick()
+    {
+        holoPos(11, holoEntity(11):pos() + SmokeVel/Freq)
+        if(SmokeAlive)
+        {
+            SmokeVel += vec(0,0,-1)*HookGravity
+            SmokeDir   = SmokeVel/SmokeVel:mag()
+            SmokeSpeed = SmokeVel:mag()
+            rangerFlags(RangerFlags)
+            SmokeRang = rangerOffset(2*SmokeSpeed/Freq, holoEntity(11):pos(), RightDirection)
+            if(SmokeRang:hit())
+            {
+                print("ded")
+                #ltRemove(11)
+                SmokeAlive = 0
+            }
+        }
+    }
+    
+    function smokeTime()
+    {
+        SmokeAlive = -1
+        ltRemove(11)
+    }
+    
+    SmokeTime   = 5
+    SmokeColor  = "Green"
+    SmokeKey    = "e"
+    SmokeNext   = "up"
+    SmokePrev   = "down"
+    SmokeLaunch = 10000
+    
+    Freq = 15
+    I = 1000/Freq
+    #Wep = "weapon_real_cs_knife"
+    Wep = "weapon_crowbar"
+    
+    Int = 4
+    while(Int > 0)
+    {
+        holoCreate(Int)
+        holoParent(Int, owner())
+        holoPos(Int, owner():pos()+vec(0,0,Height))
+        Int--
+    }
+    
+    holoModel(1, "models/weapons/w_missile.mdl")
+    holoMaterial(1, "models/debug/debugwhite")
+    holoColor(1, vec(1,1,1)*50)
+    
+    holoModel(2, "models/weapons/w_missile.mdl")
+    holoMaterial(2, "models/debug/debugwhite")
+    holoColor(2, vec(1,1,1)*50)
+    
+    holoModel(3, "models/sprops/cylinders/size_3/cylinder_6x288.mdl")
+    holoColor(3, vec(1,1,1)*40)
+    holoUnparent(3)
+    
+    holoModel(4, "models/sprops/cylinders/size_3/cylinder_6x288.mdl")
+    holoColor(4, vec(1,1,1)*40)
+    holoUnparent(4)
+    
+    RangerFlags         = "e"
+    SteamSound          = "ambient/gas/steam2.wav"
+    HitSound            = "physics/metal/sawblade_stick3.wav"
+    ReleaseSound        = "phx/eggcrack.wav"
+
+    LaunchSpeed         = 8000
+    MinLength           = 10
+    
+    Trail               = 0
+    Sound               = 0
+    
+    RetractMaxSpeed     = 500
+    RetractStartSpeed   = 100
+    RetractAccel        = 500
+    
+    Height              = 50
+    HookGravity         = 200
+    CableStiffness      = 1
+    CableDampening      = 0.5
+    Delay = 200
+    
+    LeftState = "Loaded"
+    LeftKey = "mouse_5"
+    
+    RightState = "Loaded"
+    RightKey = "mouse_4"
+
+    timer("tim", I)
+    runOnKeys(owner(), 1)
+}
+
+if(clk("Left") == 1)
+{
+    LeftTime = 1
+}
+if(clk("Right") == 1)
+{
+    RightTime = 1
+}
+
+if(clk("smoke") == 1)
+{
+    smokeTime()
+}
+
+if(keyClk(owner()) == -1)
+{
+    
+    if(keyClkPressed() == RightKey)
+    {
+        if(Reel == 1 && RightTime == 1)
+        {
+            Reel = 0
+        }
+        if(RightState == "Hit" && RightModeChange != 2 && RightTime == 0 && RightTimer == 1)
+        {
+            playRe()
+            holoParent(2, owner())
+            holoPos(2, owner():pos())
+            RightState = "Loaded"
+            RightModeChange = 2
+        }
+        if(RightState == "Hit" && RightTime == 0 && RightTimer == 1)
+        {
+            RightRetract = RetractStartSpeed
+        }
+        if(RightTimer != 0)
+        {
+            RightTimer = 0
+        }
+        if(RightModeChange > 0)
+        {
+            RightModeChange = 0
+        }
+    }
+    
+    if(keyClkPressed() == LeftKey)
+    {
+        if(Reel == 1 && LeftTime == 1)
+        {
+            Reel = 0
+        }
+        if(LeftState == "Hit" && LeftModeChange != 2 && LeftTime == 0 && LeftTimer == 1)
+        {
+            playRe()
+            holoParent(1, owner())
+            holoPos(1, owner():pos())
+            LeftState = "Loaded"
+            LeftModeChange = 2
+        }
+        if(LeftState == "Hit" && LeftTime == 0 && LeftTimer == 1)
+        {
+            LeftRetract = RetractStartSpeed
+        }
+        if(LeftTimer != 0)
+        {
+            LeftTimer = 0
+        }
+        if(LeftModeChange > 0)
+        {
+            LeftModeChange = 0
+        }
+    }
+}
+
+if(keyClk(owner()) == 1)
+{
+    if(owner():weapon():type() == Wep)
+    {
+        if(keyClkPressed() == SmokeKey)
+        {
+            shootSmoke()
+        }
+        if(keyClkPressed() == SmokeNext)
+        {
+            nextSmoke()
+        }
+        if(keyClkPressed() == SmokePrev)
+        {
+            prevSmoke()
+        }
+        if(keyClkPressed() == RightKey)
+        {
+            if(RightTimer == 0 && RightState != "Loaded")
+            {
+                timer("Right", Delay)
+                RightTime = 0
+                RightTimer = 1
+            }
+            
+            
+            if(RightState == "Loaded" && RightModeChange == 0)
+            {
+                RightTimer = -1
+                holoUnparent(2)
+                RightDirection = owner():eyeTrace():pos()-holoEntity(2):pos()
+                RightDirection = RightDirection:normalized()
+                holoAng(2, -heading(vec(), ang(), RightDirection))
+                RightSpeed = LaunchSpeed + (owner():vel()*RightDirection):mag()
+                RightModeChange = 1
+                RightState = "Fired"
+                owner():soundPlay("Fire", 0.529, "weapons/ar1/ar1_dist2.wav")
+                soundPitch("Fire", 50)
+            }
+        }
+        
+        if(keyClkPressed() == LeftKey)
+        {
+            if(LeftTimer == 0 && LeftState != "Loaded")
+            {
+                timer("Left", Delay)
+                LeftTime = 0
+                LeftTimer = 1
+            }
+            
+            
+            if(LeftState == "Loaded" && LeftModeChange != 1)
+            {
+                LeftTimer = -1
+                holoUnparent(1)
+                LeftDirection = owner():eyeTrace():pos()-holoEntity(1):pos()
+                LeftDirection = LeftDirection:normalized()
+                holoAng(1, -heading(vec(), ang(), LeftDirection))
+                LeftSpeed = LaunchSpeed + (owner():vel()*LeftDirection):mag()
+                LeftModeChange = 1
+                LeftState = "Fired"
+                owner():soundPlay("Fire", 0.529, "weapons/ar1/ar1_dist2.wav")
+                soundPitch("Fire", 50)
+            }
+            
+        }
+        
+    }
+}
+
+if(clk("tim") == 1)
+{
+    if(SmokeAlive)
+    {
+        smokeTick()
+    }
+    if(owner():health() <= 0)
+    {
+        RightState = "Loaded"
+        LeftState = "Loaded"
+        holoPos(1, owner():pos() + vec(0,0, Height))
+        holoParent(1, owner())
+        holoPos(2, holoEntity(1):pos())
+        holoParent(2, owner())
+    }
+    LeftForce = vec()
+    RightForce = vec()
+    timer("tim", I)
+    #owner():applyPlayerForce(vec(0,0,1)*1080/Freq)
+    if(RightState != "Loaded")
+    {
+        holoPos(4, (owner():pos()+vec(0,0,Height) + holoEntity(2):pos())/2)
+        P1 = owner():pos()+vec(0,0,Height)+owner():vel()/Freq
+        P2 = holoEntity(2):pos()
+        Ang = ang(-elevation(P1, ang(0,0,0), P2), -bearing(P1, ang(), P2), 0)
+        Ang = toWorldAng(vec(),ang(90,0,0), vec(), Ang)
+        holoAng(4, Ang)
+        
+        holoScale(4, vec(0.1,0.1,holoEntity(2):pos():distance(owner():pos()+vec(0,0,Height))/288))
+        holoAlpha(4, 255)
+    }
+    else
+    {
+        holoAlpha(4, 0)
+    }
+    if(RightState == "Fired")
+    {
+        rangerFilter(owner())
+        rangerFlags(RangerFlags)
+        RightRanger = rangerOffset(2*RightSpeed/Freq,holoEntity(2):pos(), RightDirection)
+        
+        if(RightRanger:hit())
+        {
+            holoPos(2, RightRanger:pos())
+            RightLength = holoEntity(2):pos():distance(owner():pos()+vec(0,0,Height))
+            RightState = "Hit"
+            playHit()
+            
+            if(RightRanger:entity():isValidPhysics() == 1)
+            {
+                holoParent(2, RightRanger:entity())
+                RightParent = RightRanger:entity()
+            }
+            else
+            {
+                RightParent = noentity()
+            }
+        }
+        else
+        {
+            RightDirection = RightDirection*RightSpeed - vec(0,0,HookGravity)
+            holoAng(2, -heading(vec(), ang(), RightDirection))
+            #holoAng(2, holoEntity(2):toWorld(ang(0,0,0)))
+            RightSpeed = RightDirection:mag()
+            RightDirection = RightDirection:normalized()
+            holoPos(2, holoEntity(2):pos() + RightDirection*RightSpeed/Freq)
+        }
+    }
+    
+    if(RightState == "Hit")
+    {
+        RightActual = holoEntity(2):pos():distance(owner():pos()+vec(0,0,Height))
+        RightDirection = holoEntity(2):pos()-(owner():pos() + vec(0,0,Height))
+        RightDirection = RightDirection:normalized()
+        RightHeading   =  heading(RightDirection, ang(), vec())
+        RightLocalVel  = toLocal(vec(), ang(), owner():vel()-RightParent:vel(), RightHeading)
+        #print(round(owner():vel():normalized():dot(RightDirection)*10)/10)
+        if(RightActual > RightLength)
+        {
+            #owner():applyPlayerForce(RightDirection*max(0,RightActual-RightLength)*CableStiffness + max(0,owner():vel():normalized():dot(RightDirection))*toWorld(vec(max(RightLocalVel:x(), 0), 0,0), ang(), vec(), RightHeading)*CableDampening)
+            RightForce = RightDirection*max(0,RightActual-RightLength)*CableStiffness - (owner():vel()-RightParent:vel()):mag()*RightDirection*min(0,(owner():vel()-RightParent:vel()):normalized():dot(RightDirection))*CableDampening
+        }
+        else
+        {
+            RightForce = RightDirection*max(0,RightActual-RightLength)*CableStiffness
+        }
+        
+    }
+    
+    if(LeftState != "Loaded")
+    {
+        holoPos(3, (owner():pos()+vec(0,0,Height) + holoEntity(1):pos())/2)
+        P1 = owner():pos()+vec(0,0,Height)+owner():vel()/Freq
+        P2 = holoEntity(1):pos()
+        Ang = ang(-elevation(P1, ang(0,0,0), P2), -bearing(P1, ang(), P2), 0)
+        Ang = toWorldAng(vec(),ang(90,0,0), vec(), Ang)
+        holoAng(3, Ang)
+        
+        holoScale(3, vec(0.1,0.1,holoEntity(1):pos():distance(owner():pos()+vec(0,0,Height))/288))
+        holoAlpha(3, 255)
+    }
+    else
+    {
+        holoAlpha(3, 0)
+    }
+    if(LeftState == "Fired")
+    {
+        rangerFilter(owner())
+        LeftRanger = rangerOffset(2*LeftSpeed/Freq,holoEntity(1):pos(), LeftDirection)
+        
+        if(LeftRanger:hit())
+        {
+            holoPos(1, LeftRanger:pos())
+            LeftLength = holoEntity(1):pos():distance(owner():pos()+vec(0,0,Height))
+            LeftState = "Hit"
+            playHit()
+            if(LeftRanger:entity():isValidPhysics() == 1)
+            {
+                holoParent(1, LeftRanger:entity())
+                LeftParent = LeftRanger:entity()
+            }
+            else
+            {
+                LeftParent = noentity()
+            }
+        }
+        else
+        {
+            LeftDirection = LeftDirection*LeftSpeed - vec(0,0,HookGravity)
+            holoAng(1, -heading(vec(), ang(), LeftDirection))
+            #holoAng(1, holoEntity(1):toWorld(ang(0,90,0)))
+            LeftSpeed = LeftDirection:mag()
+            LeftDirection = LeftDirection:normalized()
+            holoPos(1, holoEntity(1):pos() + LeftDirection*LeftSpeed/Freq)
+        }
+    }
+    
+    if(LeftState == "Hit")
+    {
+        
+        LeftActual = holoEntity(1):pos():distance(owner():pos()+vec(0,0,Height))
+        LeftDirection = holoEntity(1):pos()-(owner():pos() + vec(0,0,Height))
+        LeftDirection = LeftDirection:normalized()
+        LeftHeading   =  heading(LeftDirection, ang(), vec())
+        LeftLocalVel  = toLocal(vec(), ang(), owner():vel()-LeftParent:vel(), LeftHeading)
+        #print(round(owner():vel():normalized():dot(LeftDirection)*10)/10)
+        if(LeftActual > LeftLength)
+        {
+            #owner():applyPlayerForce(LeftDirection*max(0,LeftActual-LeftLength)*CableStiffness + max(0,owner():vel():normalized():dot(LeftDirection))*toWorld(vec(max(LeftLocalVel:x(), 0), 0,0), ang(), vec(), LeftHeading)*CableDampening)
+            LeftForce = LeftDirection*max(0,LeftActual-LeftLength)*CableStiffness - (owner():vel()-LeftParent:vel()):mag()*LeftDirection*min(0,(owner():vel()-LeftParent:vel()):normalized():dot(LeftDirection))*CableDampening
+        }
+        else
+        {
+            LeftForce = LeftDirection*max(0,LeftActual-LeftLength)*CableStiffness
+        }
+        
+    }
+    
+    owner():applyPlayerForce(LeftForce + RightForce)
+    
+    if(owner():keyPressed(LeftKey) == 1)
+    {
+        if(LeftState == "Hit" && LeftTime == 1)
+        {
+            if(LeftActual < LeftLength)
+            {
+                LeftLength = LeftActual
+            }
+            if(!Trail)
+            {
+                Trail = 1
+                spawnTrail()
+            }
+            if(!Sound)
+            {
+                Sound = 1
+                playS()
+            }
+            if(Reel == 0)
+            {
+                Reel = 1
+            }
+            LeftRetract = min(LeftRetract + RetractAccel/Freq, RetractMaxSpeed)
+            LeftLength = max(MinLength, LeftLength - LeftRetract/Freq)
+        }
+    }
+    if(owner():keyPressed(RightKey) == 1)
+    {
+        if(RightState == "Hit" && RightTime == 1)
+        {
+            if(RightActual < RightLength)
+            {
+                RightLength = RightActual
+            }
+            if(!Trail)
+            {
+                Trail = 1
+                spawnTrail()
+            }
+            if(!Sound)
+            {
+                Sound = 1
+                playS()
+            }
+            if(Reel == 0)
+            {
+                Reel = 1
+            }
+            RightRetract = min(RightRetract + RetractAccel/Freq, RetractMaxSpeed)
+            RightLength = max(MinLength, RightLength - RightRetract/Freq)
+        }
+    }
+    
+    if(!owner():keyPressed(RightKey) && !owner():keyPressed(LeftKey))
+    {
+        if(Trail)
+        {
+            holoUnparent(10)
+            Trail = 0
+        }
+        if(Sound)
+        {
+            soundStop(1)
+            Sound = 0
+        }
+    }
+}
