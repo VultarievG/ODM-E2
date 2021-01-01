@@ -12,7 +12,7 @@ You should be good to go! (Check Controls section)
 In the expression2 editor you can search for the main e2 (vul's_odm.txt), double click the file when you find it.
 Then leave the e2 editor and place the E2 anywhere!
 
-# Keybinds
+# Controls
 There are a few keys to know using this E2.
 You can feel free to change these keybinds if you choose.
 There are two keys for controlling the two main grapple hooks called
