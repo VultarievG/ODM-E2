@@ -1,6 +1,8 @@
 @name libltrails
 @persist LTs
 
+#Place this file in expression2/include/
+
 function entity:ltUpdate(ID:number, SSize:number, ESize:number, Len:number, Mat:string, Col:vector, Alpha:number)
 {
     holoEntity(ID):setTrails(SSize, ESize, Len, Mat, Col, Alpha)
