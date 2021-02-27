@@ -5,6 +5,7 @@ My latest ODM Expression 2 script for flying around like in Attack on Titan with
 Download this repo and unpack the contents of ODM-E2 (excluding this README) to:
   steamapps/common/GarrysMod/garrysmod/data/expression2/
 Make sure to keep libltrails.txt inside the include folder during your instalation.
+You need the wiremod addon and the nexus core addons for this expression 2 script to work.
 
 You should be good to go! (Check Controls section)
 
